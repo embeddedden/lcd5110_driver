@@ -22,6 +22,8 @@ int32_t init_display(display_5110 *display)
 {
     uint8_t byte = 0;
     HAL_GPIO_WritePin(display->RESET_BASE, display->RESET_PIN, GPIO_PIN_SET); //reset disable
+
+    Soft_Delay(0xFF);
     HAL_GPIO_WritePin(display->RESET_BASE, display->RESET_PIN, GPIO_PIN_RESET); //reset enable
     Soft_Delay(0xFFFF);
     HAL_GPIO_WritePin(display->RESET_BASE, display->RESET_PIN, GPIO_PIN_SET); //reset disable
@@ -30,6 +32,7 @@ int32_t init_display(display_5110 *display)
     Soft_Delay(0xFFFFF);
     HAL_GPIO_WritePin(display->COM_DAT_BASE, display->COM_DAT_PIN, GPIO_PIN_RESET); //commands
 
+    Soft_Delay(0xFFFF);
     byte = 0x21;
     HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_RESET);
     HAL_SPI_Transmit(&hspi3, &byte, 1, 100);
@@ -38,13 +41,18 @@ int32_t init_display(display_5110 *display)
     //Bias System
     byte = 0x13;
     HAL_SPI_Transmit(&hspi3, &byte, 1, 100);
+
+    Soft_Delay(0xFFFF);
     //temp coef
     byte = 0x04;
     HAL_SPI_Transmit(&hspi3, &byte, 1, 100);
+
+    Soft_Delay(0xFFFF);
     //Vop
     byte = 0xB8;
     HAL_SPI_Transmit(&hspi3, &byte, 1, 100);
 
+    Soft_Delay(0xFFFF);
 
     byte = 0x20;
     HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_RESET);
@@ -61,7 +69,7 @@ int32_t init_display(display_5110 *display)
     HAL_SPI_Transmit(&hspi3, &byte, 1, 100);
     HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_SET);
 
-
+    Soft_Delay(0xFFFF);
 
     HAL_GPIO_WritePin(display->COM_DAT_BASE, display->COM_DAT_PIN, GPIO_PIN_SET); //data
 
@@ -70,10 +78,10 @@ int32_t init_display(display_5110 *display)
 
 
 
-int32_t print_char(display_5110 *display, const char chr)
+int32_t print_char(display_5110 *display, char *chr)
 {
     switch_to_data_mode(display);
-    uint8_t * byte = small_ascii_font + ((uint8_t)chr - 0x20)*6;
+    uint8_t * byte = small_ascii_font + ((uint8_t)*chr - 0x20)*6;
     for(int i = 0; i < 6; i++)
     {
     HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_RESET);
@@ -105,15 +113,40 @@ int32_t set_position (display_5110 *display, uint8_t x, uint8_t y)
     return 0;
 }
 
+
+int32_t clear_display(display_5110 *display)
+{
+    uint8_t byte = 0x00;
+    set_position(display, 0, 0);
+    for(uint32_t i = 0; i < 6*84; i++)
+    {
+        HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_RESET);
+        HAL_SPI_Transmit(&hspi3, &byte, 1, 100);
+        HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_SET);
+    }
+}
+
+int32_t print_string(display_5110 *display, char *buf, uint32_t size)
+{
+    for(uint32_t i = 0; i < size; i++)
+    {
+        print_char(display, buf+i);
+    }
+    return 0;
+}
+
 int32_t refresh_display(display_5110 *display)
 {
     switch_to_data_mode(display);
-    set_position(display, 0, 0);
-    for(int i = 0; i < 6; i++)
+    for(int j = 0; j < 6; j++)
+    {
+    set_position(display, 0, j);
+    for(int i = 0; i < 84; i++)
     {
         HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_RESET);
-        HAL_SPI_Transmit(display->hspi, display->buf[i], 1, 100);
+        HAL_SPI_Transmit(display->hspi, &display->buf[j*84 + i], 1, 10);
         HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_SET);
+    }
     }
     return 0;
 }

@@ -26,9 +26,9 @@ int32_t init_display (display_5110 * display);
 
 int32_t set_position (display_5110 * display, uint8_t x, uint8_t y);
 
-int32_t print_char (display_5110 * display, const char chr);
+int32_t print_char (display_5110 * display, char *chr);
 
-int32_t print_string (display_5110 * display, char * buf, uint32_t size, uint8_t x, uint8_t y);
+int32_t print_string (display_5110 * display, char * buf, uint32_t size);
 
 int32_t refresh_display (display_5110 * display);
 
