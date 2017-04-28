@@ -33,18 +33,19 @@ int32_t init_display(display_5110 *display)
     HAL_GPIO_WritePin(display->COM_DAT_BASE, display->COM_DAT_PIN, GPIO_PIN_RESET); //commands
 
     Soft_Delay(0xFFFF);
+    //Command set in addition mode
     byte = 0x21;
     HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_RESET);
     HAL_SPI_Transmit(&hspi3, &byte, 1, 100);
     HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_RESET);
     Soft_Delay(0xFFFF);
     //Bias System
-    byte = 0x13;
+    byte = 0x15;
     HAL_SPI_Transmit(&hspi3, &byte, 1, 100);
 
     Soft_Delay(0xFFFF);
     //temp coef
-    byte = 0x04;
+    byte = 0x07;
     HAL_SPI_Transmit(&hspi3, &byte, 1, 100);
 
     Soft_Delay(0xFFFF);
@@ -81,11 +82,11 @@ int32_t init_display(display_5110 *display)
 int32_t print_char(display_5110 *display, char *chr)
 {
     switch_to_data_mode(display);
-    uint8_t * byte = small_ascii_font + ((uint8_t)*chr - 0x20)*6;
+    uint8_t const * byte = (const uint8_t*)small_ascii_font + ((uint8_t)*chr - 0x20)*6;
     for(int i = 0; i < 6; i++)
     {
     HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_RESET);
-    HAL_SPI_Transmit(&hspi3, byte+i, 1, 100);
+    HAL_SPI_Transmit(&hspi3, (uint8_t*)byte+i, 1, 100);
     HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_SET);
     }
     return 0;
@@ -124,6 +125,7 @@ int32_t clear_display(display_5110 *display)
         HAL_SPI_Transmit(&hspi3, &byte, 1, 100);
         HAL_GPIO_WritePin(display->SCE_BASE, display->SCE_PIN, GPIO_PIN_SET);
     }
+    return 0;
 }
 
 int32_t print_string(display_5110 *display, char *buf, uint32_t size)
